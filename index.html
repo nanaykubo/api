@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css">
+
+</head>
+
+<style>
+    #myTable_filter{
+        display:none;
+    }
+
+    .container{
+        margin-top:20px;
+
+    }
+
+    #myTable{
+        width:100%;
+    }
+
+</style>
+
+<body>
+
+    <div class="container">
+            <button type="button" class="btn btn-primary" style="float:right;" data-toggle="modal" data-target="#addModal">Add Data</button>
+        <table class="table" id="myTable">
+        <thead>
+        <tr>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+        </table>  
+    </div>
+
+    <!-- modal add -->
+    <div class="modal" tabindex="-1" role="dialog" id="addModal">
+    <div class="modal-dialog" role="document">
+    <div class="modal-content">
+    <div class="modal-header" >
+        <h5 class="modal-title" style="margin-left: 39%;">Add Data</h5>
+    </div>
+    <div class="modal-body">
+            <form>
+                    <div class="form-group">
+                      <label for="exampleFormControlInput1">Name</label>
+                      <input type="text" class="form-control" id="Name" placeholder="Name">
+                    </div>
+
+                    <div class="form-group">
+                    <label for="exampleFormControlInput1">Quantity</label>
+                    <input type="number" class="form-control" id="Quantity" placeholder="Quantity">
+                    </div>
+
+                    <div class="form-group">
+                    <label for="exampleFormControlInput1">Amount</label>
+                    <input type="number" class="form-control" id="Amount" placeholder="Amount">
+                    </div>
+
+                  </form>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="SaveData">Save Data</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+    </div>
+    </div>
+    </div>
+    </div>
+    <!-- modal edit -->
+    <div class="modal" tabindex="-1" role="dialog" id="editModal">
+            <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header" >
+                <h5 class="modal-title" style="margin-left: 39%;">Edit Data</h5>
+            </div>
+            <div class="modal-body">
+                    <form>
+                            <div class="form-group">
+                              <label for="exampleFormControlInput1">Name</label>
+                              <input type="text" class="form-control" id="editName" placeholder="Name">
+                            </div>
+        
+                            <div class="form-group">
+                            <label for="exampleFormControlInput1">Quantity</label>
+                            <input type="number" class="form-control" id="editQuantity" placeholder="Quantity">
+                            </div>
+        
+                            <div class="form-group">
+                            <label for="exampleFormControlInput1">Amount</label>
+                            <input type="number" class="form-control" id="editAmount" placeholder="Amount">
+                            </div>
+        
+                          </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" edit-id='' id="editSaveData">Update Changes</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+            </div>
+            </div>
+    </div>
+</body>
+
+<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js" ></script>
+<script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js" ></script>
+
+<script>
+
+    $( document ).ready(function() {
+        getData();
+
+        $(document).on("click",".edit",function() {
+
+        var data = $('#myTable').DataTable().row( $(this).parents('tr') ).data();
+
+        $("#editSaveData").attr('edit-id',data[1]);
+        document.getElementById("editName").value = data[2];
+        document.getElementById("editQuantity").value = data[3];
+        document.getElementById("editAmount").value = data[4];
+
+        $("#editModal").modal('show');
+        });
+
+        $(document).on("click",".delete",function() {
+
+        var deletedata = $('#myTable').DataTable().row( $(this).parents('tr') ).data();
+
+        const items = {
+        id       : deletedata[1]
+        }
+           
+        $.ajax({
+                type: "POST",
+                url: "http://localhost:5000/deleteData",
+                data: JSON.stringify(items),
+                dataType: "json",
+                cache: false,
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                $('#myTable tbody').remove();
+                $('#myTable').DataTable().clear().destroy();
+                getData();
+                clearData();
+                },
+                error: function (err) {
+                alert(err)
+                }
+            });
+        });
+    });
+
+    $("#SaveData").click(function() {
+
+    const items = {
+    name     : $('#Name').val(),
+    qty      : $('#Quantity').val(),
+    amt      : $('#Amount').val()
+    }
+
+    $.ajax({
+    type: "POST",
+    url: "http://localhost:5000/insertData",
+    data: JSON.stringify(items),
+    dataType: "json",
+    cache: false,
+    contentType: "application/json; charset=utf-8",
+    success: function (data) {
+        clearData();
+    $('#addModal').modal('hide');
+    $('#myTable tbody').remove();
+    $('#myTable').DataTable().clear().destroy();
+    getData();
+    },
+    error: function (err) {
+    alert(err)
+    }
+    });
+
+    });  
+
+    $("#editSaveData").click(function() {
+
+    const items = {
+    id       : $('#editSaveData').attr('edit-id'),
+    name     : $('#editName').val(),
+    qty      : $('#editQuantity').val(),
+    amt      : $('#editAmount').val()
+    }
+
+    $.ajax({
+    type: "POST",
+    url: "http://localhost:5000/updateData",
+    data: JSON.stringify(items),
+    dataType: "json",
+    cache: false,
+    contentType: "application/json; charset=utf-8",
+    success: function (data) {
+    
+    $('#editModal').modal('hide');
+    $('#myTable tbody').remove();
+    $('#myTable').DataTable().clear().destroy();
+    getData();
+    },
+    error: function (err) {
+    alert(err)
+    }
+    });
+
+    });  
+
+    function getData() {
+
+        $.ajax({
+        type: "POST",
+        url: "http://localhost:5000/getData",
+        success: function (data) {
+        let html = [];
+
+        html.push(
+            "<thead>" +
+            "<tr>"+
+            "<th> </th>"+
+            "<th> ID </th>"+
+            "<th> Name </th>"+
+            "<th> Qty </th>"+
+            "<th> Amount </th>"+
+            "</tr>" +
+            "</thead>"
+        )
+
+        for (var i = 0; i < data.length; i++) {
+            html.push(
+            "<tr>" +
+            "<td><button type='button' class='btn btn-danger edit'>Edit</button> <button type='button' class='btn btn-primary delete'>Delete</button>"+
+            "<i class='fa fa-edit'></i>"+
+            "</a></td>" +
+            "<td>" + data[i].ID + "</td>" +
+            "<td>" + data[i].Name + "</td>" +
+            "<td>" + data[i].Qty + "</td>" +
+            "<td>" + data[i].Amount + "</td>" +
+            "</tr>");
+        }
+        document.getElementById('myTable').innerHTML = html.join('');
+
+        $('#myTable thead tr').clone(true).appendTo('#myTable thead');
+        $('#myTable thead tr:eq(1) th').each(function (i) {
+        var title = $(this).text();
+
+        if(i != 0 ){
+            $(this).html('<input type="text" placeholder="Search" />');
+        }
+
+
+        $('input', this).on('keyup change', function () {
+        if (table.column(i).search() !== this.value) {
+        table
+            .column(i).search(this.value).draw();
+        }
+        });
+        });
+
+        const table = $('#myTable').DataTable({
+            "orderCellsTop": true,
+            "scrollX": true,
+            "render": false,
+            "pageLength": 10
+        });
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+        alert(JSON.stringify(xhr.status));
+        alert(JSON.stringify(xhr.responseText));
+        alert(JSON.stringify(thrownError));
+        }
+        });
+    }
+
+    function clearData(){
+    $('#Name').val(''),
+    $('#Quantity').val(''),
+    $('#Amount').val('')
+    }
+</script>
+
+</html>
